@@ -14,14 +14,16 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
 from alpha_vantage.timeseries import TimeSeries
-TICKER = "AAPL"
-KEY = 'BPBSUICJ7AGJ53KW'
+
+
+TICKER = "AAPL" #stock symbol
+KEY = 'BPBSUICJ7AGJ53KW' #API key - 25 requests per day
 config = {
     "alpha_vantage": {
-        "key": "demo", # you can use the demo API key for this project, but please make sure to get your own API key at https://www.alphavantage.co/support/#api-key
+        "key": KEY, # you can use the demo API key for this project, but please make sure to get your own API key at https://www.alphavantage.co/support/#api-key
         "symbol": TICKER,
         "outputsize": "full",
-        "key_adjusted_close": "5. adjusted close",
+        "key_close": "4. close",
     },
     "data": {
         "window_size": 20,
@@ -36,32 +38,33 @@ config = {
         "color_pred_val": "#0074D9",
         "color_pred_test": "#FF4136",
     },
-    "model": {
-        "input_size": 1, # since we are only using 1 feature, close price
-        "num_lstm_layers": 2,
-        "lstm_size": 32,
-        "dropout": 0.2,
-    },
-    "training": {
-        "device": "cpu", # "cuda" or "cpu"
-        "batch_size": 64,
-        "num_epoch": 100,
-        "learning_rate": 0.01,
-        "scheduler_step_size": 40,
-    }
+    # "model": {
+    #     "input_size": 1, # since we are only using 1 feature, close price
+    #     "num_lstm_layers": 2,
+    #     "lstm_size": 32,
+    #     "dropout": 0.2,
+    # },
+    # "training": {
+    #     "device": "cpu", # "cuda" or "cpu"
+    #     "batch_size": 64,
+    #     "num_epoch": 100,
+    #     "learning_rate": 0.01,
+    #     "scheduler_step_size": 40,
+    # }
 }
 
 def download_data(config):
     ts = TimeSeries(KEY) 
-    data, meta_data = ts.get_daily_adjusted(config["alpha_vantage"]["symbol"], outputsize=config["alpha_vantage"]["outputsize"])
+    data, meta_data = ts.get_daily(config["alpha_vantage"]["symbol"], outputsize=config["alpha_vantage"]["outputsize"]) #query data
 
-    data_date = [date for date in data.keys()]
+    data_date = [date for date in data.keys()] #sort dates old to new
     data_date.reverse()
 
-    data_close_price = [float(data[date][config["alpha_vantage"]["key_adjusted_close"]]) for date in data.keys()]
+    data_close_price = [float(data[date][config["alpha_vantage"]["key_close"]]) for date in data.keys()] #sort close price according to resorted dates
     data_close_price.reverse()
     data_close_price = np.array(data_close_price)
 
+    #feedback for data range
     num_data_points = len(data_date)
     display_date_range = "from " + data_date[0] + " to " + data_date[num_data_points-1]
     print("Number data points", num_data_points, display_date_range)
@@ -78,7 +81,7 @@ def prepare_data_x(x, window_size):
 
 def prepare_data_y(x, window_size):
     # # perform simple moving average
-    # output = np.convolve(x, np.ones(window_size), 'valid') / window_size
+    output = np.convolve(x, np.ones(window_size), 'valid') / window_size
 
     # use the next day as label
     output = x[window_size:]
@@ -86,6 +89,9 @@ def prepare_data_y(x, window_size):
 
 
 class Normalizer():
+    '''
+    Z-score normalization
+    '''
     def __init__(self):
         self.mu = None
         self.sd = None
@@ -100,6 +106,9 @@ class Normalizer():
         return (x*self.sd) + self.mu
     
 class TimeSeriesDataset(Dataset):
+    '''
+    TimeSeriesDataset object with helper functions
+    '''
     def __init__(self, x, y):
         x = np.expand_dims(x, 2) # in our case, we have only 1 feature, so we need to convert `x` into [batch, sequence, features] for LSTM
         self.x = x.astype(np.float32)
@@ -113,7 +122,7 @@ class TimeSeriesDataset(Dataset):
 
 
 def main():
-    # normalize
+    # query and normalize
     data_date, data_close_price, num_data_points, display_date_range = download_data(config)
     scaler = Normalizer()
     normalized_data_close_price = scaler.fit_transform(data_close_price)
@@ -138,7 +147,7 @@ def main():
     to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
     to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
 
-    ## plots
+    # plots
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(data_date, to_plot_data_y_train, label="Prices (train)", color=config["plots"]["color_train"])
@@ -147,7 +156,7 @@ def main():
     x = np.arange(0,len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
     plt.title("Daily close prices for " + config["alpha_vantage"]["symbol"] + " - showing training and validation data")
-    plt.grid(b=None, which='major', axis='y', linestyle='--')
+    plt.grid(which='major', axis='y', linestyle='--')
     plt.legend()
     plt.show()
 
@@ -158,5 +167,8 @@ def main():
     print("Train data shape", dataset_train.x.shape, dataset_train.y.shape)
     print("Validation data shape", dataset_val.x.shape, dataset_val.y.shape)
 
-    train_dataloader = DataLoader(dataset_train, batch_size=config["training"]["batch_size"], shuffle=True)
-    val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_size"], shuffle=True)
+    # train_dataloader = DataLoader(dataset_train, batch_size=config["training"]["batch_size"], shuffle=True)
+    # val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_size"], shuffle=True)
+
+if __name__ == "__main__":
+    main()
