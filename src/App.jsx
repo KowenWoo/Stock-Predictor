@@ -48,20 +48,21 @@ function App() {
             </div>
           )}
         </div>    
-        <div className="flex justify-center h-96 rounded-lg items-center bg-[#53565A] opacity-20">
+        <div className="flex justify-center h-96 rounded-lg items-center border-1 
+                        backdrop-blur-2xl border-[#53565A]">
           <h1>Stock Chart here</h1>
         </div>
         {/* Additional information section */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#1a1a1a] p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Prediction Insights</h2>
-            <p className="">
+          <div className="p-6 rounded-lg shadow-sm border-1 backdrop-blur-2xl border-[#53565A]">
+            <h2 className="text-l font-semibold mb-4">Prediction Insights</h2>
+            <p className="sm">
               Prediction suff
             </p>
           </div>
-          <div className="bg-[#1a1a1a] p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Key Metrics</h2>
-            <p>
+          <div className=" p-6 rounded-lg shadow-sm border-1 backdrop-blur-2xl border-[#53565A]">
+            <h2 className="text-l font-semibold mb-4">Key Metrics</h2>
+            <p className="text-sm">
               Some metrics here (Market cap, Change, etc.)
             </p>
           </div>
