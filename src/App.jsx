@@ -1,6 +1,5 @@
 // src/App.jsx
 import { useState, useEffect } from 'react';
-import { fetchStockData, STOCKS } from './services/data';
 import './index.css';
 
 
