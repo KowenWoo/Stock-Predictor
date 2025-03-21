@@ -13,9 +13,8 @@ const STOCKS = {
 };
 
 function App() {
-  const [stockData, setStockData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Future plans for loading in the stock data
+
 
   // JUST APPLE FOR NOW
   const symbol = 'AAPL';
@@ -28,13 +27,13 @@ function App() {
   const isPositive = priceChange >= 0;
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
+    <div className="min-h-screen">
       {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6">
           <div>
             <h2 className="text-3xl font-bold">{stockInfo.name}</h2>
-            <div className="text-gray-600 text-sm">{stockInfo.symbol}</div>
+            <div className="text-sm">{stockInfo.symbol}</div>
           </div>
           
           <div className="mt-4 md:mt-0">
