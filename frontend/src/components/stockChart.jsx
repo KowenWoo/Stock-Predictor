@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -15,10 +13,18 @@ import {
   TimeScale,
   SubTitle,
   Colors,
-
 } from 'chart.js';
 import 'chartjs-adapter-date-fns'; // For date formatting
 import { useState, useEffect, useRef } from 'react';
+import { parseISO, format } from 'date-fns';
+
+
+// TOD0:
+// 1. Add a loading spinner when the data is being fetched
+// 2. Process some additional info from the stock data so we can send them over 
+// - and display them in the UI
+// 3. Add some error handling in case the data fetching fail
+
 
 // Register Chart.js components
 ChartJS.register(
@@ -34,59 +40,70 @@ ChartJS.register(
   Colors,
 );
 
-const StockChart = ({ data, symbol }) => {
-  // If no data yet, show loading placeholder
+const StockChart = ({ data, symbol, onDataProcessed }) => {
+  
   if (!data || !data.historical || !data.prediction) {
     return <div className="h-80 w-full bg-gray-100 animate-pulse rounded-lg"></div>;
   }
-  const historicalDatesKnonwn = Object.keys(data.historical).sort();
-  const predictionDatesKnown = Object.keys(data.prediction).sort();
-  const last = new Date(predictionDatesKnown[predictionDatesKnown.length - 1]);
+  
+  
 
-  const additonalDate = [];
+  
+  const historicalDates = Object.keys(data.historical).sort();
+  const predictionDates = Object.keys(data.prediction).sort();
+  
+  const lastPredictionDate = predictionDates[predictionDates.length - 1];
+  const lastDate = parseISO(lastPredictionDate);
+
+  // add some more dates on the chart so the prediction has some space to be shown
+  // Edit this later so it is adjustable based on the amount of predicted data to be shwon
+  const additionalDates = [];
   const numExtraDays = 29;
   for (let i = 1; i <= numExtraDays; i++) {
-    const futureDate = new Date(last);
-    futureDate.setDate(last.getDate() + i);
-
+    const futureDate = new Date(lastDate);
+    futureDate.setDate(lastDate.getDate() + i);
+    
     const year = futureDate.getFullYear();
     const month = String(futureDate.getMonth() + 1).padStart(2, '0');
     const day = String(futureDate.getDate()).padStart(2, '0');
-    additonalDate.push(`${year}-${month}-${day}`);
+    additionalDates.push(`${year}-${month}-${day}`);
   }
 
-  // Format dates and prices for chart
-  const dates = [...historicalDatesKnonwn.map(date => new Date(date).toLocaleDateString()), 
-                 ...predictionDatesKnown.map(date => new Date(date).toLocaleDateString()),
-                 ...additonalDate.map(date => new Date(date).toLocaleDateString())];
   
-  const historicalPrices = Object.values(data.historical).map(day => parseFloat(day['4. close']));
-  const predictionPrices = Object.values(data.prediction);
+  const historicalPrices = historicalDates.map(date => {
+    const closePrice = parseFloat(data.historical[date]['4. close']);
+    return isNaN(closePrice) ? null : closePrice;
+  });
   
-  // Create empty spaces between historical and prediction data
+  
+  const predictionPrices = predictionDates.map(date => {
+    return data.prediction[date]; // These should already be numbers
+  });
+
+  
   const chartData = {
-    labels: dates,
     datasets: [
       {
         label: 'Historical',
-        data: [...historicalPrices, ...Array(predictionPrices.length).fill(null)],
+        data: historicalDates.map((date, index) => ({
+          x: date, // Keep as ISO string for consistent parsing
+          y: historicalPrices[index]
+        })),
         borderColor: '#eeeeee',
         backgroundColor: 'rgba(0,0,0,0)',
         pointBackgroundColor: '#eeeeee',
         pointRadius: 0,
         pointHoverRadius: 3,
         borderWidth: 2,
-        tension: 0.4,
+        tension: 0.3, 
         fill: false,
-        cubicInterpolationMode: 'monotone',
       },
       {
         label: 'Prediction',
-        data: [
-          ...Array(historicalPrices.length).fill(null), 
-          ...predictionPrices,
-          ...Array(additonalDate.length).fill(null)
-        ],
+        data: predictionDates.map((date, index) => ({
+          x: date, // Keep as ISO string
+          y: predictionPrices[index]
+        })),
         borderColor: '#666666',
         backgroundColor: 'rgba(0,0,0,0)',
         pointBackgroundColor: '#666666',
@@ -96,7 +113,6 @@ const StockChart = ({ data, symbol }) => {
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
-        cubicInterpolationMode: 'monotone'
       }
     ]
   };
@@ -108,15 +124,18 @@ const StockChart = ({ data, symbol }) => {
       mode: 'nearest',
       intersect: false,
     },
-    animations:{
-      tension:{
+    animations: {
+      tension: {
         duration: 1000,
         easing: 'linear'
       }
     },
     plugins: {
       legend: {
-        position: 'top-left',
+        position: 'top',
+        labels: {
+          color: '#eeeeee'
+        }
       },
       tooltip: {
         enabled: true,
@@ -131,16 +150,13 @@ const StockChart = ({ data, symbol }) => {
         displayColors: false,
         callbacks: {
           title: function(context) {
-            const date = new Date(context[0].parsed.x);
-            return date.toLocaleString('en-US', { 
-              month: 'short', 
-              day: 'numeric',
-              year: 'numeric'
-            });
+            if (context.length === 0) return '';
+            const date = parseISO(context[0].raw.x);
+            return format(date, 'MMM d, yyyy');
           },
           label: function(context) {
             const datasetLabel = context.dataset.label || '';
-            const value = context.parsed.y;
+            const value = context.raw.y;
             return `${datasetLabel}: $${value.toFixed(2)}`;
           }
         }
@@ -148,24 +164,23 @@ const StockChart = ({ data, symbol }) => {
       title: {
         display: false,
         text: `${symbol} Stock Price and Prediction`,
-
       },
     },
     elements: {
       line: {
-        tension: 0.2,
-        cubicInterpolationMode: 'monotone',
+        tension: 0.1,
         borderCapStyle: 'round'
       },
       point: {
-        hitRadius: 30,
-        hoverRadius: 5
+        hitRadius: 10,
+        hoverRadius: 4
       }
     },
     scales: {
-      x:{
+      x: {
         type: 'time',
         time: {
+          parser: 'yyyy-MM-dd', 
           unit: 'day',
           displayFormats: {
             day: 'MMM d'
@@ -177,14 +192,15 @@ const StockChart = ({ data, symbol }) => {
         },
         ticks: {
           autoSkip: true,
-          maxTicksLimit: 10,
+          maxTicksLimit: 8, 
           align: 'center',
           maxRotation: 0,
-          minRotation: 0
+          minRotation: 0,
+          color: '#eeeeee' 
         }
       },
       y: {
-         position: 'right',
+        position: 'right',
         grid: {
           display: false
         },
@@ -193,7 +209,8 @@ const StockChart = ({ data, symbol }) => {
             return `$${value.toFixed(2)}`;
           },
           count: 6,
-          precision: 2
+          precision: 2,
+          color: '#eeeeee' 
         },
         beginAtZero: false
       }

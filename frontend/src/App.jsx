@@ -2,9 +2,19 @@ import { useState, useEffect } from 'react';
 import './index.css';
 import { set } from 'date-fns';
 import StockChart from './components/stockchart';
+
+// TODO:
+// 1. Add a loading spinner when the data is being fetched
+// 2. Process some additional info from the stock data so we can send them over
+//    and display them in the UI
+// 3. Add some error handling in case the data fetching fails
+// 4. Add the API calls to get the real stock data, updated, after server.js is done
+// 5. Add the API calls to get the real stock predictions, after the ML model is done
+// ....
+
+
 // Hardcoded stock data for now
 // Will be replaced with API calls to get real-time data
-
 const mockPredictions = {
   'AAPL':{
     "2025-03-21": 218.27,
@@ -37,19 +47,15 @@ function App() {
       setError(null);
       
       try {
-        // Load from local JSON file instead of API
+        // Local data for now but API call will repplace this
         const response = await fetch(`/data/${selectedStock.toLowerCase()}.json`);
         const data = await response.json();
         
         if (data.error) {
           throw new Error(data.error);
         }
-        
-        // Process Alpha Vantage data
         const timeSeries = data['Time Series (Daily)'];
-        
-        // Get the last 30 days of data
-        const dates = Object.keys(timeSeries).sort().slice(-365);
+        const dates = Object.keys(timeSeries).sort().slice(-365); // last year 
         const historicalData = {};
         
         dates.forEach(date => {
@@ -80,7 +86,7 @@ function App() {
           prediction: mockPredictions[selectedStock]
         });
       } catch (err) {
-        console.error('Error fetching stock data:', err);
+        console.error('Error gettign the stock data:', err);
         setError('Failed to load stock data. Please try again later.');
       } finally {
         setLoading(false);
@@ -89,7 +95,6 @@ function App() {
     
     fetchStockData();
   }, [selectedStock]);
-  // PRICE CHANGE CALCULATIONS
   // Just hardcoded some stuff for now for testing purposes
 
   return (
