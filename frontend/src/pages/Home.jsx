@@ -34,7 +34,7 @@ const mockPredictions = {
   }
 }
 
-function App() {
+function Home() {
   const [selectedStock, setSelectedStock] = useState('AAPL');
   const [stockData, setStockData] = useState({ stock: '', date: '', price: 0, change: 0 });
   const [stockInfo, setStockInfo] = useState(null);
@@ -146,4 +146,4 @@ function App() {
   )
 }
 
-export default App;
+export default Home;
