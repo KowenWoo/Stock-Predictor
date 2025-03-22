@@ -11,6 +11,9 @@ Current Technology Stack:
 ## Current Development
 Implementing a core visualization interface for three major tech stocks (AAPL, NVDA, AMZN) with focus on responsive design and smooth data interactions. The application enables users to switch between stocks and view both historical performance and predicted future trends.
 
+AI backend: TCN with residual blocks (convolutional layer, ReLu, Dropout, Normalization). Data is structured into time series dataloader with sequence length 20, input length 1.
+
+
 ## Future Plans
 - Migrate to Next.js framework for improved performance and routing
 - Integrate Shadcn UI component library for enhanced UI/UX
