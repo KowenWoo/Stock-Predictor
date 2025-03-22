@@ -16,5 +16,5 @@ body {
 
 /* Tooltip customizations for charts */
 .chartjs-tooltip {
-  @apply shadow-lg bg-white border border-gray-100 rounded-lg;
+  @apply shadow-lg bg-white border border-gray-100 rounded-lg justify-center items-center;
 }
