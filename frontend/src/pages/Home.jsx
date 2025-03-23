@@ -10,6 +10,7 @@ import StockChart from '../components/stockChart';
 // 3. Add some error handling in case the data fetching fails
 // 4. Add the API calls to get the real stock data, updated, after server.js is done
 // 5. Add the API calls to get the real stock predictions, after the ML model is done
+// 6. Add ARIA labels for accessibility
 // ....
 
 
