@@ -42,8 +42,8 @@ app.get('/api/stock-data/:ticker', async (req, res) => {
   
   // check cache and check if its fresh if not, then fetch from API
   const cachedData = await cacheFunc.getTheCachedData(ticker);
-  if (cachedData.data && cachedData.data._cached_at) {
-    console.log(`Cache found and last updated: ${parseISO(cachedData.data._cached_at).toLocaleString()}`);
+  if (cachedData.data && cachedData.data.timeCached) {
+    console.log(`Cache found and last updated: ${parseISO(cachedData.data.timeCached).toLocaleString()}`);
   }
   if (cachedData.fresh) {
     console.log(`Using cached data for ${ticker}`);
@@ -62,12 +62,12 @@ app.get('/api/stock-data/:ticker', async (req, res) => {
     
     const dataAndCacheTime = {
       ...response.data,
-      _cached_at: new Date().toISOString() // --> This is for checking the cache status later
+      timeCached: new Date().toISOString() // --> This is for checking the cache status later
     };
     
     await cacheFunc.saveToCache(ticker, dataAndCacheTime);
     
-    res.json(responseWithTime);
+    res.json(dataAndCacheTime);
   } catch (error) {
     console.error(`API error for ${ticker}:`, error.message);
     
