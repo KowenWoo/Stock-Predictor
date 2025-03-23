@@ -18,27 +18,6 @@ import axios from 'axios';
 // ....
 
 
-// Hardcoded stock data for now
-// Will be replaced with API calls to get real-time data
-const mockPredictions = {
-  'AAPL':{
-    "2025-03-21": 218.27,
-    "2025-03-22": 200.10,
-    "2025-03-23": 183.76,
-    "2025-03-24": 185.45,
-    "2025-03-25": 186.20,
-    "2025-03-26": 187.55,
-    "2025-03-27": 189.30,
-    "2025-03-28": 188.75,
-    "2025-03-29": 187.55,
-    "2025-03-30": 189.30,
-    "2025-04-01": 188.75,
-    "2025-04-02": 197.55,
-    "2025-04-03": 275.30,
-    "2025-04-04": 300.75
-  }
-}
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Home() {
@@ -148,7 +127,7 @@ function Home() {
         </div>
         {loading ? (
           <div className="text-center p-10">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-r-transparent"></div>
               <p className="mt-2">Loading stock data...</p>
           </div>
           ) : (
