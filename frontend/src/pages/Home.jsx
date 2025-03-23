@@ -131,19 +131,21 @@ function Home() {
               <p className="mt-2">Loading stock data...</p>
           </div>
           ) : (
-          <div className="flex justify-center h-120 rounded-lg items-center border-1 
-                        backdrop-blur-2xl border-[#53565A]">
+          <div className="flex justify-center h-120 rounded-lg items-center shadow-xl border-2 border-black/15
+                        backdrop-blur-xs backdrop-grayscale">
             <StockChart data={stockData} symbol={selectedStock} onDataProcessed={handleChartDataProcessed} />
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-          <div className="p-6 rounded-lg shadow-sm border-1 backdrop-blur-2xl border-[#53565A]">
+          <div className="p-6 rounded-lg shadow-xl border-2 border-black/15
+                        backdrop-blur-xs backdrop-grayscale">
             <h1 className="text-l">Stock Prediction</h1>            
             <p>
               key predictions here
             </p>              
           </div>
-          <div className="p-6 rounded-lg shadow-sm border-1 backdrop-blur-2xl border-[#53565A]">
+          <div className="p-6 rounded-lg shadow-xl border-2 border-black/15
+                        backdrop-blur-xs backdrop-grayscale">
             <h1 className = "text-l">Stock Info</h1>
             <p>
               Stock info here

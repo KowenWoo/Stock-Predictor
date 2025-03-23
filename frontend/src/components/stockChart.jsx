@@ -218,7 +218,7 @@ const StockChart = ({ data, symbol, onDataProcessed }) => {
   };
 
   return (
-    <div className="p-4 bg-transparent rounded-lg shadow-md w-full h-full">
+    <div className="p-4 bg-transparent rounded-lg w-full h-full">
       <Line data={chartData} options={options} />
     </div>
   );
