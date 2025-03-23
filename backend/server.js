@@ -8,7 +8,6 @@ import cacheFunc from './cachefunc.js';
 import { parseISO } from 'date-fns';
 
 
-const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 
 
 // TODO: 
@@ -16,6 +15,7 @@ const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 // - so I dont hit the API limit (24 hrs between every update so my data is still pretty new)
 // 2. Add Health check endpoint nad also add the error handling
 // 3. Add the prediction endpoint when the ML model is done
+// 4. Potentially combine the 3 endpoints into one
 
 // Progress:
 // -- Added the caching
@@ -25,6 +25,7 @@ const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: `${__dirname}/.env` });
+const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 const app = express();
 await cacheFunc.setupCacheDir();
 
@@ -129,7 +130,7 @@ app.get('/api/available-stocks', (req, res) => {
   ];
   res.json(stocks);
 });
-const PORT = process.env.PORT || 5001;
-app.listen(5001, () => {
-  console.log(`Server running at http://localhost:5001`);
+const PORT = process.env.PORT;
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
