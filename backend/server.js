@@ -1,8 +1,15 @@
 import express from 'express';
 import cors from 'cors';
+import axios from 'axios';
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import dotenv from 'dotenv';
+import cacheFunc from './cachefunc.js';
+import { parseISO } from 'date-fns';
+
+
+const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
+
 
 // TODO: 
 // 1. I want to have caching for the data so I don't have to call the API every time
@@ -10,55 +17,119 @@ import dotenv from 'dotenv';
 // 2. Add Health check endpoint nad also add the error handling
 // 3. Add the prediction endpoint when the ML model is done
 
+// Progress:
+// -- Added the caching
+// -- Added the cache status endpoint
+// -- Added the predictions for AAPL
+// ...
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 dotenv.config({ path: `${__dirname}/.env` });
-console.log("Alpha Vantage API Key:", process.env.ALPHA_VANTAGE_API_KEY ? "Found" : "Not Found");
-
-
 const app = express();
-
+await cacheFunc.setupCacheDir();
 
 app.use(cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"]
+  origin: ["http://localhost:5173"],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
 }));
 app.use(express.json());
 
-const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
 
 app.get('/api/stock-data/:ticker', async (req, res) => {
   const ticker = req.params.ticker;
+  console.log(`Getting data for ${ticker}...`);
+  
+  // check cache and check if its fresh if not, then fetch from API
+  const cachedData = await cacheFunc.getTheCachedData(ticker);
+  if (cachedData.data && cachedData.data._cached_at) {
+    console.log(`Cache found and last updated: ${parseISO(cachedData.data._cached_at).toLocaleString()}`);
+  }
+  if (cachedData.fresh) {
+    console.log(`Using cached data for ${ticker}`);
+    return res.json(cachedData.data);
+  }
   
   try {
-    console.log(`Getting the ${ticker} stock...`);
+    console.log(`Fetching ${ticker} from API...`);
     const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${ticker}&outputsize=full&apikey=${API_KEY}`;
     const response = await axios.get(url);
     
-    // Check if API returned an error
     if (response.data['Error Message']) {
       return res.status(400).json({ error: response.data['Error Message'] });
     }
     
-    // Return the data from Alpha Vantage
-    res.json(response.data);
+    
+    const dataAndCacheTime = {
+      ...response.data,
+      _cached_at: new Date().toISOString() // --> This is for checking the cache status later
+    };
+    
+    await cacheFunc.saveToCache(ticker, dataAndCacheTime);
+    
+    res.json(responseWithTime);
   } catch (error) {
-    console.error(`Error fetching stock data for ${ticker}:`, error.message);
-    res.status(500).json({ error: 'Failed to get stock data' });
+    console.error(`API error for ${ticker}:`, error.message);
+    
+    // if theres an error, use the cache anyway whether or not its past 24 hrs
+    if (cachedData.data) {
+      console.log(`Trying to use old cache for ${ticker}...`);
+      return res.json({
+        ...cachedData.data,
+        note: "Using old cached data due to API error"
+      });
+    }
+    res.status(500).json({ error: 'Could not get stock data' }); // No cache to use
   }
 });
 
-// ADD the prediction endpoint when the ML model is done
+
+app.get('/api/cache-status', async (req, res) => {
+  try {
+    const status = await cacheFunc.getCacheStatus();
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// pred endpoint, To be replaced with ML model later
+app.get('/api/predict/:ticker', (req, res) => {
+  const ticker = req.params.ticker.toUpperCase();
+  
+  // TODO: Turn to a list and include NVIDIA and Amazon
+  const predictions = {
+    'AAPL': {
+      "2025-03-21": 218.27,
+      "2025-03-22": 200.10,
+      "2025-03-23": 183.76,
+      "2025-03-24": 185.45,
+      "2025-03-25": 186.20,
+      "2025-03-26": 187.55,
+      "2025-03-27": 189.30,
+      "2025-03-28": 188.75,
+      "2025-03-29": 187.55,
+      "2025-03-30": 189.30,
+      "2025-04-01": 188.75,
+      "2025-04-02": 197.55,
+      "2025-04-03": 275.30,
+      "2025-04-04": 300.75
+    }
+  };
+  res.json({
+    stock: ticker,
+    predictions: predictions
+  });
+});
+
 app.get('/api/available-stocks', (req, res) => {
-  const stocks = [ // Just apple for now, but we'll add NVIDIA and AMAZON later
+  // Just hardcoding this for now, will add NVIDIA and Amazon later when models are ready  
+  const stocks = [
     { ticker: 'AAPL', name: 'Apple Inc.' }
   ];
   res.json(stocks);
 });
-// add the error handling here smh 
-
+const PORT = process.env.PORT || 5001;
 app.listen(5001, () => {
-  console.log(`Server running on port 5001`);
+  console.log(`Server running at http://localhost:5001`);
 });
