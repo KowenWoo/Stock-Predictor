@@ -15,6 +15,7 @@ AI backend: TCN with residual blocks (convolutional layer, ReLu, Dropout, Normal
 
 
 ## Future Plans
+- ADD ARIA ROLES for accessibility
 - Migrate to Next.js framework for improved performance and routing
 - Integrate Shadcn UI component library for enhanced UI/UX
 - Use recharts instead of chart.js
