@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { get } from 'http';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, 'cache');
@@ -71,6 +72,24 @@ export async function getCacheStatus() {
     }
     
     return status;
+  } catch (err) {
+    console.error('Error checking cache status:', err);
+    throw err;
+  }
+}
+
+export async function clearCache() {
+  try{
+    const files = await fs.readdir(CACHE_DIR);
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        const ticker = file.replace('.json', '').toUpperCase();
+        const status = await getCacheStatus(file);
+        if (status.ageHours > 24) {
+          await fs.unlink(path);
+        };
+      }
+    }
   } catch (err) {
     console.error('Error checking cache status:', err);
     throw err;
