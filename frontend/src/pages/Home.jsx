@@ -48,21 +48,22 @@ function Home() {
       setLoading(true);
       setError(null);
       try {
-
-        const stockResponse = await axios.get(`${API_BASE_URL}/api/stock-data/${selectedStock}`);
-        const predictionResponse = await axios.get(`${API_BASE_URL}/api/predict/${selectedStock}`);
+        const [stockResponse, predictionResponse] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/stock-data/${selectedStock}`),
+          axios.get(`${API_BASE_URL}/api/predict/${selectedStock}`)
+        ]);
 
         const timeSeries = stockResponse.data['Time Series (Daily)'];
         // Last 365trading days ( will be replace by a selector where we can choose what to display)
         const dates = Object.keys(timeSeries).sort().slice(-365);
-        const historricalData = {};
+        const historicalData = {};
 
         dates.forEach(date => {
-          historricalData[date] = timeSeries[date];
+          historicalData[date] = timeSeries[date];
         });
         setStockData(
           {
-            historical: historricalData,
+            historical: historicalData,
             prediction: predictionResponse.data.predictions
           }
         );
@@ -110,7 +111,7 @@ function Home() {
   return (
     <div className="min-h-screen">
       {/* Main content */}
-      <h1 className="text-3xl font-bold text-center mt-8">StockVison.AI</h1>
+      <h1 className="text-5xl font-extrabold text-center mt-8">StockVision.AI</h1>
       <h2 className="text-l font-extralight text-center">Stock price predictions and analysis</h2>
       <main className="mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6">
@@ -127,7 +128,7 @@ function Home() {
         </div>
         {loading ? (
           <div className="text-center p-10">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-r-transparent"></div>
+            <div className="inline-block animate-spin rounded-full border-4 border-solid border-white border-r-transparent"></div>
               <p className="mt-2">Loading stock data...</p>
           </div>
           ) : (
