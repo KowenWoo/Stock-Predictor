@@ -3,6 +3,13 @@ import axios from 'axios';
 const API_URL = 'http://localhost:5001/api';
 const STOCK = 'AAPL';
 
+// TODO: 
+// Add test for invalid data
+// Add test for models endpoint
+// -> Should add abort signal to axios requests
+// -> Should add timeout to axios requests
+
+
 async function testAPI() {
   try {
     const response = await axios.get(`${API_URL}/stock-data/${STOCK}`);

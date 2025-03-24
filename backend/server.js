@@ -17,6 +17,10 @@ import { parseISO } from 'date-fns';
 // 3. Add the prediction endpoint when the ML model is done
 // 4. Potentially combine the 3 endpoints into one
 
+// 5. Add abort signal to axios requests
+// 6. Add timeout to axios requests
+// 7. Add errors for invalid data and improper requests
+
 // Progress:
 // -- Added the caching
 // -- Added the cache status endpoint
@@ -44,7 +48,7 @@ app.get('/api/stock-data/:ticker', async (req, res) => {
   // check cache and check if its fresh if not, then fetch from API
   const cachedData = await cacheFunc.getTheCachedData(ticker);
   if (cachedData.data && cachedData.data.timeCached) {
-    console.log(`Cache found and last updated: ${parseISO(cachedData.data.timeCached).toLocaleString()}`);
+    console.log(`Cache found and last updated: ${parseISO(cachedData.data.timeCached).toLocaleString()}\n`);
   }
   if (cachedData.fresh) {
     console.log(`Using cached data for ${ticker}`);
@@ -52,6 +56,7 @@ app.get('/api/stock-data/:ticker', async (req, res) => {
   }
   
   try {
+    console.log(`No cached data for ${ticker}...`);
     console.log(`Fetching ${ticker} from API...`);
     const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${ticker}&outputsize=full&apikey=${API_KEY}`;
     const response = await axios.get(url);
@@ -88,7 +93,9 @@ app.get('/api/stock-data/:ticker', async (req, res) => {
 app.get('/api/cache-status', async (req, res) => {
   try {
     const status = await cacheFunc.getCacheStatus();
+    console.log("Cache status:", status);
     res.json(status);
+    
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

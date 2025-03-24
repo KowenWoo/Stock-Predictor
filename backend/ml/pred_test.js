@@ -4,21 +4,21 @@ const API_URL = 'http://localhost:5001';
 const STOCKS = ['AAPL'];
 
 
-const sampleHistoricalData = [
+const sampleData = [
   156.32, 157.83, 159.10, 158.45, 160.11, 
   162.55, 161.87, 163.76, 165.34, 166.18, 
   164.25, 165.93, 167.79, 170.12, 168.75, 
   167.33, 169.59, 171.08, 172.55, 175.22
 ];
 
-const today = new Date().toISOString().split('T')[0];
+const today = new Date().toISOString().split('T')[0]; // -> Dont include the time, just date
 
 async function testValidPrediction(ticker) {
   try {
-    console.log(`\n📊 Testing valid prediction for ${ticker}...`);
+    console.log(`\nTesting valid prediction for ${ticker}...`);
     
     const requestData = {
-      historical_data: sampleHistoricalData,
+      historical_data: sampleData,
       last_date: today
     };
     
@@ -29,7 +29,7 @@ async function testValidPrediction(ticker) {
       requestData
     );
     
-    console.log(`✅ Success! Got prediction for ${ticker}`);
+    console.log(`Success! Got prediction for ${ticker}`);
     console.log(`Response status: ${response.status}`);
     console.log(`Prediction data: ${JSON.stringify(response.data)}`);
     
@@ -41,9 +41,8 @@ async function testValidPrediction(ticker) {
     
     return true;
   } catch (error) {
-    console.error(`❌ Error testing prediction for ${ticker}:`);
+    console.error(`Error testing prediction for ${ticker}:`);
     if (error.response) {
-      // Server responded with a status code outside the 2xx range
       console.error(`Status: ${error.response.status}`);
       console.error(`Data: ${JSON.stringify(error.response.data)}`);
     } else if (error.request) {
@@ -57,7 +56,7 @@ async function testValidPrediction(ticker) {
 
 async function testInvalidData() {
   try {
-    console.log("\n🧪 Testing with invalid data (missing historical_data)...");
+    console.log("\nTesting with invalid data (missing historical_data)...");
     
     const response = await axios.post(
       `${API_URL}/predict/AAPL`, 
@@ -67,7 +66,7 @@ async function testInvalidData() {
     console.log("Response:", response.data);
     return true;
   } catch (error) {
-    console.error("❌ Error (expected):");
+    console.error("Error (expected):");
     if (error.response) {
       console.error(`Status: ${error.response.status}`);
       console.error(`Data: ${JSON.stringify(error.response.data)}`);
@@ -80,17 +79,17 @@ async function testInvalidData() {
 
 async function testModelsEndpoint() {
   try {
-    console.log("\n🔍 Testing available models endpoint...");
+    console.log("\nTesting available models endpoint...");
     
     const response = await axios.get(`${API_URL}/models`);
     
-    console.log("✅ Success! Got models information");
+    console.log("Success - Got models information");
     console.log(`Available models: ${JSON.stringify(response.data.available_models)}`);
     console.log(`Loaded models: ${JSON.stringify(response.data.loaded)}`);
     
     return true;
   } catch (error) {
-    console.error("❌ Error getting models:");
+    console.error("Error getting models:");
     if (error.response) {
       console.error(`Status: ${error.response.status}`);
       console.error(`Data: ${JSON.stringify(error.response.data)}`);
@@ -105,7 +104,7 @@ async function testModelsEndpoint() {
 
 // All tests in one main test
 async function runAllTests() {
-  console.log("🧪 Starting Flask API tests...");
+  console.log("Starting Flask API tests...");
   
   await testModelsEndpoint();
   
@@ -115,7 +114,7 @@ async function runAllTests() {
   
   await testInvalidData();
   
-  console.log("\n🏁 All tests completed!");
+  console.log("\nAll tests completed!");
 }
 
 runAllTests();
