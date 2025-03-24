@@ -122,25 +122,6 @@ app.get('/api/cache-status', async (req, res) => {
   //   stock: ticker,
   //   predictions: predictions
   // });
-  try {
-    // Get last 20 days of data to feed into model
-    const stockData = await getStockData(ticker);
-    const historicalData = Object.keys(stockData)
-      .sort()
-      .slice(-30)  // Get more than window_size to be safe
-      .map(date => parseFloat(stockData[date]['4. close']));
-    
-    // Call Flask API
-    const response = await axios.post(`http://localhost:5000/predict/${ticker}`, {
-      historical_data: historicalData,
-      last_date: Object.keys(stockData).sort().pop()
-    });
-    
-    res.json(response.data);
-  } catch (error) {
-    console.error(`Error getting predictions for ${ticker}:`, error);
-    res.status(500).json({ error: 'Failed to get predictions' });
-  }
 });
 
 app.get('/api/available-stocks', (req, res) => {
