@@ -22,7 +22,7 @@ async function testValidPrediction(ticker) {
       last_date: today
     };
     
-    console.log(`Request data: ${JSON.stringify(requestData)}`);
+    console.log(`Request data: ${JSON.stringify(requestData, null, 2)}`); // --> pretty print
     
     const response = await axios.post(
       `${API_URL}/predict/${ticker}`, 
@@ -31,7 +31,7 @@ async function testValidPrediction(ticker) {
     
     console.log(`Success! Got prediction for ${ticker}`);
     console.log(`Response status: ${response.status}`);
-    console.log(`Prediction data: ${JSON.stringify(response.data)}`);
+    console.log(`Prediction data: ${JSON.stringify(response.data, null, 2)}`);
     
     if (response.data.predictions) {
       const predictionDates = Object.keys(response.data.predictions);
