@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { parseISO } from 'date-fns';
 
 const API_URL = 'http://localhost:5001/api';
 const STOCK = 'AAPL';
@@ -22,15 +23,28 @@ async function testAPI() {
 async function testCacheStatus() {
   try {
     const response = await axios.get(`${API_URL}/cache-status`);
-    console.log("Cache status:", JSON.stringify(response.data));
+    console.log("Last time cached:", parseISO(response.data['AAPL']['lastUpdated']).toLocaleString());
+    console.log("Cache age (hours):", response.data['AAPL']['ageHours']);
   } catch (error) {
     console.error("Cache status error:", error.response?.data || error.message);
   }
 }
 
+async function testPredictions() {
+  try {
+    const response = await axios.get(`${API_URL}/predict/${STOCK}`);
+    console.log("Predictions:", JSON.stringify(response.data));
+  } catch (error) {
+    console.error("Predictions error:", error.response?.data || error.message);
+  }
+}
+
 // Run tests
-console.log("Testing stock data endpoint...");
+console.log("Testing stock data endpoint...\n");
 await testAPI();
 
 console.log("\nTesting cache status endpoint...");
 await testCacheStatus();
+
+console.log("\nTesting predictions endpoint...");
+await testPredictions();
