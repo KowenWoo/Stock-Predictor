@@ -95,32 +95,52 @@ app.get('/api/cache-status', async (req, res) => {
 });
 
 // pred endpoint, To be replaced with ML model later
-app.get('/api/predict/:ticker', (req, res) => {
+// app.get('/api/predict/:ticker', (req, res) => {
+  app.get('/api/predict/:ticker', async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
   
   // TODO: Turn to a list and include NVIDIA and Amazon
-  const predictions = {
-    'AAPL': {
-      "2025-03-21": 218.27,
-      "2025-03-22": 200.10,
-      "2025-03-23": 183.76,
-      "2025-03-24": 185.45,
-      "2025-03-25": 186.20,
-      "2025-03-26": 187.55,
-      "2025-03-27": 189.30,
-      "2025-03-28": 188.75,
-      "2025-03-29": 187.55,
-      "2025-03-30": 189.30,
-      "2025-04-01": 188.75,
-      "2025-04-02": 197.55,
-      "2025-04-03": 275.30,
-      "2025-04-04": 300.75
-    }
-  };
-  res.json({
-    stock: ticker,
-    predictions: predictions
-  });
+  // const predictions = {
+  //   'AAPL': {
+  //     "2025-03-21": 218.27,
+  //     "2025-03-22": 200.10,
+  //     "2025-03-23": 183.76,
+  //     "2025-03-24": 185.45,
+  //     "2025-03-25": 186.20,
+  //     "2025-03-26": 187.55,
+  //     "2025-03-27": 189.30,
+  //     "2025-03-28": 188.75,
+  //     "2025-03-29": 187.55,
+  //     "2025-03-30": 189.30,
+  //     "2025-04-01": 188.75,
+  //     "2025-04-02": 197.55,
+  //     "2025-04-03": 275.30,
+  //     "2025-04-04": 300.75
+  //   }
+  // };
+  // res.json({
+  //   stock: ticker,
+  //   predictions: predictions
+  // });
+  try {
+    // Get last 20 days of data to feed into model
+    const stockData = await getStockData(ticker);
+    const historicalData = Object.keys(stockData)
+      .sort()
+      .slice(-30)  // Get more than window_size to be safe
+      .map(date => parseFloat(stockData[date]['4. close']));
+    
+    // Call Flask API
+    const response = await axios.post(`http://localhost:5000/predict/${ticker}`, {
+      historical_data: historicalData,
+      last_date: Object.keys(stockData).sort().pop()
+    });
+    
+    res.json(response.data);
+  } catch (error) {
+    console.error(`Error getting predictions for ${ticker}:`, error);
+    res.status(500).json({ error: 'Failed to get predictions' });
+  }
 });
 
 app.get('/api/available-stocks', (req, res) => {
