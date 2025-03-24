@@ -46,12 +46,14 @@ def predict(ticker):
 
     try:
         data = request.json
+        if ('last_date' not in data) or ('historical_data' not in data):
+            return jsonify({"error": "Invalid input data"}), 400
         last_date = data['last_date']  # Expecting ISO format
         future_dates = generate_future_dates(last_date, 7)
         predicition_dict = {date: float(pred) for date, pred in zip(future_dates, predictions)}
         
         return jsonify({
-            "ticker": None,
+            "ticker": 'AAPL',
             "predictions": predicition_dict
         })
         
