@@ -121,7 +121,7 @@ app.get('/api/cache-status', async (req, res) => {
   // res.json({
   //   stock: ticker,
   //   predictions: predictions
-  // });
+  // })
 });
 
 app.get('/api/available-stocks', (req, res) => {
