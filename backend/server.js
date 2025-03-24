@@ -30,6 +30,9 @@ import { parseISO } from 'date-fns';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: `${__dirname}/.env` });
 const API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
+const FLASK_PORT = process.env.FLASK_PORT;
+const PORT = process.env.PORT;
+
 const app = express();
 await cacheFunc.setupCacheDir();
 
@@ -43,7 +46,7 @@ app.use(express.json());
 
 app.get('/api/stock-data/:ticker', async (req, res) => {
   const ticker = req.params.ticker;
-  console.log(`Getting data for ${ticker}...`);
+  console.log(`\nGetting data for ${ticker}...`);
   
   // check cache and check if its fresh if not, then fetch from API
   const cachedData = await cacheFunc.getTheCachedData(ticker);
@@ -105,7 +108,21 @@ app.get('/api/cache-status', async (req, res) => {
 // app.get('/api/predict/:ticker', (req, res) => {
   app.get('/api/predict/:ticker', async (req, res) => {
   const ticker = req.params.ticker.toUpperCase();
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`\nGetting prediction for ${ticker}...`);
   
+  const historical_data = await cacheFunc.getTheCachedData(ticker);
+  if (!historical_data.data) {
+    return res.status(400).json({ error: `No historical data found for ${ticker}` });
+  }
+  const data_required = {
+    historical_data: historical_data.data,
+    last_date: today
+  }
+  
+
+  const pred = await axios.post(`http://127.0.0.1:5000/predict/${ticker}`, data_required);
+  res.json(pred.data);
   // TODO: Turn to a list and include NVIDIA and Amazon
   // const predictions = {
   //   'AAPL': {
@@ -138,7 +155,7 @@ app.get('/api/available-stocks', (req, res) => {
   ];
   res.json(stocks);
 });
-const PORT = process.env.PORT;
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
