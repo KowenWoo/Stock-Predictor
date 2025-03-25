@@ -1,21 +1,15 @@
-import React from 'react';
-import { Line } from 'react-chartjs-2';
+import React, { useEffect, useState } from 'react';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-  Filler,
-  TimeScale,
-  SubTitle,
-  Colors,
-} from 'chart.js';
-import 'chartjs-adapter-date-fns'; // For date formatting
-import { useState, useEffect, useRef } from 'react';
+  ReferenceLine
+} from 'recharts';
 import { parseISO, format } from 'date-fns';
 
 
@@ -26,200 +20,200 @@ import { parseISO, format } from 'date-fns';
 // 3. Add some error handling in case the data fetching fail
 
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  TimeScale,
-  Colors,
-);
+// Progress:
+// Moved to RECHARTS CAUSE CHARTJS WAS BEING A BITCH
+// - Added some error handling
+// - moved additional info into a seperate file
+
 
 const StockChart = ({ data, symbol, onDataProcessed }) => {
+  const [processedData, setProcessedData] = useState([]);
   
+  // Show loading state if data isn't available yet
   if (!data || !data.historical || !data.prediction) {
-    return <div className="h-80 w-full bg-gray-100 animate-pulse rounded-lg"></div>;
+    return <div className="h-80 w-full bg-gray-800/30 animate-pulse rounded-lg"></div>;
   }
   
-  
-
-  
-  const historicalDates = Object.keys(data.historical).sort();
-  const predictionDates = Object.keys(data.prediction).sort();
-  
-  const lastPredictionDate = predictionDates[predictionDates.length - 1];
-  const lastDate = parseISO(lastPredictionDate);
-
-  // add some more dates on the chart so the prediction has some space to be shown
-  // Edit this later so it is adjustable based on the amount of predicted data to be shwon
-  const additionalDates = [];
-  const numExtraDays = 29;
-  for (let i = 1; i <= numExtraDays; i++) {
-    const futureDate = new Date(lastDate);
-    futureDate.setDate(lastDate.getDate() + i);
+  useEffect(() => {
+    const formattedData = [];
+    let historicalDates = [];
+    let predictionDates = [];
     
-    const year = futureDate.getFullYear();
-    const month = String(futureDate.getMonth() + 1).padStart(2, '0');
-    const day = String(futureDate.getDate()).padStart(2, '0');
-    additionalDates.push(`${year}-${month}-${day}`);
-  }
-
-  
-  const historicalPrices = historicalDates.map(date => {
-    const closePrice = parseFloat(data.historical[date]['4. close']);
-    return isNaN(closePrice) ? null : closePrice;
-  });
-  
-  
-  const predictionPrices = predictionDates.map(date => {
-    return data.prediction[date]; // These should already be numbers
-  });
-
-  
-  const chartData = {
-    datasets: [
-      {
-        label: 'Historical',
-        data: historicalDates.map((date, index) => ({
-          x: date, // Keep as ISO string for consistent parsing
-          y: historicalPrices[index]
-        })),
-        borderColor: '#eeeeee',
-        backgroundColor: 'rgba(0,0,0,0)',
-        pointBackgroundColor: '#eeeeee',
-        pointRadius: 0,
-        pointHoverRadius: 3,
-        borderWidth: 2,
-        tension: 0.3, 
-        fill: false,
-      },
-      {
-        label: 'Prediction',
-        data: predictionDates.map((date, index) => ({
-          x: date, // Keep as ISO string
-          y: predictionPrices[index]
-        })),
-        borderColor: '#666666',
-        backgroundColor: 'rgba(0,0,0,0)',
-        pointBackgroundColor: '#666666',
-        pointRadius: 0,
-        pointHoverRadius: 2,
-        borderWidth: 2.5,
-        borderDash: [5, 5],
-        tension: 0.3,
-        fill: false,
-      }
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'nearest',
-      intersect: false,
-    },
-    animations: {
-      tension: {
-        duration: 1000,
-        easing: 'linear'
-      }
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          color: '#eeeeee'
+    try {
+      historicalDates = Object.keys(data.historical || {});
+      predictionDates = Object.keys(data.prediction || {});
+      
+      historicalDates.forEach(date => {
+        const entry = data.historical[date];
+        if (entry && entry['4. close']) {
+          formattedData.push({
+            date,
+            historical: parseFloat(entry['4. close']),
+            prediction: null
+          });
         }
-      },
-      tooltip: {
-        enabled: true,
-        position: 'nearest',
-        backgroundColor: 'rgba(255, 255, 255, 0.85)',
-        titleColor: '#111',
-        bodyColor: '#333',
-        borderColor: '#ddd',
-        borderWidth: 1,
-        cornerRadius: 8,
-        padding: 12,
-        displayColors: false,
-        callbacks: {
-          title: function(context) {
-            if (context.length === 0) return '';
-            const date = parseISO(context[0].raw.x);
-            return format(date, 'MMM d, yyyy');
-          },
-          label: function(context) {
-            const datasetLabel = context.dataset.label || '';
-            const value = context.raw.y;
-            return `${datasetLabel}: $${value.toFixed(2)}`;
-          }
+      });
+      
+      predictionDates.forEach(date => {
+        const value = data.prediction[date];
+        const existingIndex = formattedData.findIndex(item => item.date === date);
+        
+        if (existingIndex >= 0) {
+          formattedData[existingIndex].prediction = parseFloat(value);
+        } else {
+          formattedData.push({
+            date,
+            historical: null,
+            prediction: parseFloat(value)
+          });
         }
-      },
-      title: {
-        display: false,
-        text: `${symbol} Stock Price and Prediction`,
-      },
-    },
-    elements: {
-      line: {
-        tension: 0.1,
-        borderCapStyle: 'round'
-      },
-      point: {
-        hitRadius: 10,
-        hoverRadius: 4
-      }
-    },
-    scales: {
-      x: {
-        type: 'time',
-        time: {
-          parser: 'yyyy-MM-dd', 
-          unit: 'day',
-          displayFormats: {
-            day: 'MMM d'
-          },
-          tooltipFormat: 'MMM d, yyyy'
-        },
-        grid: {
-          display: false
-        },
-        ticks: {
-          autoSkip: true,
-          maxTicksLimit: 8, 
-          align: 'center',
-          maxRotation: 0,
-          minRotation: 0,
-          color: '#eeeeee' 
+      });
+      
+      formattedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      setProcessedData(formattedData);
+      
+      // Calculate metrics for callback
+      if (formattedData.length > 0 && onDataProcessed) {
+        const lastHistoricalEntry = [...formattedData]
+          .filter(item => item.historical !== null)
+          .pop();
+          
+        const lastPredictionEntry = [...formattedData]
+          .filter(item => item.prediction !== null)
+          .pop();
+          
+        if (lastHistoricalEntry && lastPredictionEntry) {
+          const metricsData = {
+            latestHistoricalDate: lastHistoricalEntry.date,
+            latestHistoricalPrice: lastHistoricalEntry.historical,
+            latestPredictionDate: lastPredictionEntry.date,
+            latestPredictionPrice: lastPredictionEntry.prediction,
+            priceChange: lastPredictionEntry.prediction - lastHistoricalEntry.historical,
+            percentChange: ((lastPredictionEntry.prediction - lastHistoricalEntry.historical) / lastHistoricalEntry.historical) * 100
+          };
+          
+          onDataProcessed(metricsData);
         }
-      },
-      y: {
-        position: 'right',
-        grid: {
-          display: false
-        },
-        ticks: {
-          callback: function(value) {
-            return `$${value.toFixed(2)}`;
-          },
-          count: 6,
-          precision: 2,
-          color: '#eeeeee' 
-        },
-        beginAtZero: false
       }
+    } catch (err) {
+      console.error("Error processing chart data:", err);
     }
+  }, [data, onDataProcessed]);
+  
+  // no data
+  if (!processedData || processedData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full w-full bg-gray-800/20 rounded-lg">
+        <p className="text-gray-400">No data available to display</p>
+      </div>
+    );
+  }
+  
+  // Make custom tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload || !payload.length) return null;
+    
+    let formattedDate;
+    try {
+      formattedDate = format(parseISO(label), 'MMM d, yyyy');
+    } catch (err) {
+      formattedDate = label;
+    }
+    
+    return (
+      <div className=" border border-gray-700 p-3 rounded-md shadow-lg">
+        <p className="text-white font-medium">{formattedDate}</p>
+        {payload.map((entry) => {
+          if (entry.value === null) return null;
+          
+          const isHistorical = entry.name === 'historical';
+          const color = isHistorical ? 'white' : (entry.value > processedData[0].historical ? 'rgb(74, 222, 128)' : 'rgb(239, 68, 68)');
+          
+          return (
+            <div key={entry.name} className="flex items-center mt-1 text-white text-sm">
+              <div className="w-2 h-2 rounded-full mr-2 bg-amber-950"></div>
+              <span>Price: ${entry.value.toFixed(2)}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
-
+  
+  // Find the transition point date
+  const transitionDate = processedData.find(d => d.historical !== null && d.prediction !== null)?.date;
+  
+  // Set prediction color
+  const isPredictionPositive = 
+    processedData[processedData.length - 1]?.prediction > 
+    processedData.find(d => d.historical !== null && d.prediction === null)?.historical;
+  
+  const predictionColor = isPredictionPositive ? "#4ade80" : "#ef4444";
+  
   return (
-    <div className="p-4 bg-transparent rounded-lg w-full h-full">
-      <Line data={chartData} options={options} />
+    <div className="w-full h-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={processedData}
+          margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+        >
+          <CartesianGrid horizontal={false} vertical={false} />
+          <XAxis
+            dataKey="date"
+            angle = {315}
+            tick={{ fill: '#eee' }}
+            tickCount={5}
+            tickFormatter={date => {
+              try {
+                return format(parseISO(date), 'MMM d');
+              } catch (err) {
+                return date;
+              }
+            }}
+            dy={10}
+          />
+          <YAxis
+            orientation="right"
+            tickFormatter={value => `$${value}`}
+            tick={{ fill: '#eee' }}
+            dx={10}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+          
+          {transitionDate && (
+            <ReferenceLine
+              x={transitionDate}
+              stroke="#666"
+              strokeDasharray="3 3"
+              label={{ value: 'Now', position: 'top', fill: '#999' }}
+            />
+          )}
+          
+          <Line
+            name="Historical"
+            type="monotone"
+            dataKey="historical"
+            stroke="#eeeeee"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 3, fill: '#fff' }}
+            connectNulls
+          />
+          <Line
+            name="Prediction"
+            type="monotone"
+            dataKey="prediction"
+            stroke={predictionColor}
+            strokeWidth={2}
+            strokeDasharray="5 5"
+            dot={false}
+            activeDot={{ r: 3, fill: predictionColor }}
+            connectNulls
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
