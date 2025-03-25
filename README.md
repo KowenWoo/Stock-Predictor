@@ -4,7 +4,7 @@ Developing a responsive web application that visualizes stock price predictions 
 ## Tech Stack
 Current Technology Stack:
 - Frontend: React with TailwindCSS for responsive, clean UI design
-- Data Visualization: Chart.js integration for interactive stock price charts
+- Data Visualization: Recharts integration for interactive stock price charts
 - Backend: Temporal Convolutional Network model for price predictions
 - Deployment: Frontend to be hosted on GitHub Pages with separate backend deployment
 
