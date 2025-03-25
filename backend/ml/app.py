@@ -42,14 +42,14 @@ def predict(ticker):
     
 
     # Get the predction here by passing it to the model
-    predictions = [189.0, 190.0, 191.0, 192.0, 193.0, 194.0, 195.0] # place holder, replace with actual prediction by calling the model
+    predictions = [189.0, 190.0, 191.0, 192.0, 193.0, 194.0, 195.0, 189.0, 200, 231.0, 212.0, 203.0, 194.0, 195.0,] # place holder, replace with actual prediction by calling the model
 
     try:
         data = request.json
         if ('last_date' not in data) or ('historical_data' not in data):
             return jsonify({"error": "Invalid input data"}), 400
         last_date = data['last_date']  # Expecting ISO format
-        future_dates = generate_future_dates(last_date, 7)
+        future_dates = generate_future_dates(last_date, len(predictions))
         predicition_dict = {date: float(pred) for date, pred in zip(future_dates, predictions)}
         
         return jsonify({

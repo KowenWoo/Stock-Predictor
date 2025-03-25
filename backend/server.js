@@ -51,10 +51,10 @@ app.get('/api/stock-data/:ticker', async (req, res) => {
   // check cache and check if its fresh if not, then fetch from API
   const cachedData = await cacheFunc.getTheCachedData(ticker);
   if (cachedData.data && cachedData.data.timeCached) {
-    console.log(`Cache found and last updated: ${parseISO(cachedData.data.timeCached).toLocaleString()}\n`);
+    console.log(`Cache found and last updated: ${parseISO(cachedData.data.timeCached).toLocaleString()}`);
   }
   if (cachedData.fresh) {
-    console.log(`Using cached data for ${ticker}`);
+    console.log(`Using cached data for ${ticker}\n`);
     return res.json(cachedData.data);
   }
   
@@ -120,9 +120,15 @@ app.get('/api/cache-status', async (req, res) => {
     last_date: today
   }
   
-
-  const pred = await axios.post(`http://127.0.0.1:5000/predict/${ticker}`, data_required);
-  res.json(pred.data);
+  
+  try{
+    const pred = await axios.post(`http://127.0.0.1:5000/predict/${ticker}`, data_required);
+    console.log(`Prediction data: ${JSON.stringify(pred.data, null, 2)}`);
+    res.json(pred.data);
+  } catch (error) {
+    console.error(`Error getting prediction for ${ticker}:`, error.message);
+    res.status(500).json({ error: 'Could not get prediction' });
+  }
   // TODO: Turn to a list and include NVIDIA and Amazon
   // const predictions = {
   //   'AAPL': {
@@ -151,7 +157,9 @@ app.get('/api/cache-status', async (req, res) => {
 app.get('/api/available-stocks', (req, res) => {
   // Just hardcoding this for now, will add NVIDIA and Amazon later when models are ready  
   const stocks = [
-    { ticker: 'AAPL', name: 'Apple Inc.' }
+    { ticker: 'AAPL', name: 'Apple Inc.' },
+    { ticker: 'NVDA', name: 'NVIDIA Corporation' },
+    { ticker: 'AMZN', name: 'Amazon.com Inc.' }
   ];
   res.json(stocks);
 });
