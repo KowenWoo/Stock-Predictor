@@ -7,48 +7,61 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils import weight_norm
 
+class CausalConv1d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation=1):
+        super(CausalConv1d, self).__init__()
+        self.padding = (kernel_size - 1) * dilation
+        self.conv = weight_norm(nn.Conv1d(
+            in_channels, out_channels, kernel_size, 
+            padding=self.padding, dilation=dilation
+        ))
+        
+    def forward(self, x):
+        x = self.conv(x)
+        # Remove padding at the end to maintain causality
+        x = x[:, :, :-self.padding] if self.padding else x
+        return x
+
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation, dropout):
         super(ResidualBlock, self).__init__()
 
-        # Padding ensures output has the same length as input
-        padding = (kernel_size - 1) * dilation
-
         # First causal convolution
-        self.conv1 = weight_norm(nn.Conv1d(in_channels, out_channels, kernel_size,
-                                           padding=padding, dilation=dilation))
+        self.conv1 = CausalConv1d(in_channels, out_channels, kernel_size, dilation)
         self.relu1 = nn.ReLU()
         self.dropout1 = nn.Dropout(dropout)
 
         # Second causal convolution
-        self.conv2 = weight_norm(nn.Conv1d(out_channels, out_channels, kernel_size,
-                                           padding=padding, dilation=dilation))
+        self.conv2 = CausalConv1d(out_channels, out_channels, kernel_size, dilation)
         self.relu2 = nn.ReLU()
         self.dropout2 = nn.Dropout(dropout)
 
         # 1x1 Conv for residual connection if dimensions mismatch
         self.downsample = nn.Conv1d(in_channels, out_channels, 1) if in_channels != out_channels else None
         self.relu_out = nn.ReLU()
-
+        
     def forward(self, x):
         # Store residual
-        residual = x  
+        residual = x
 
-        # First convolution block
-        x = self.conv1(x)
-        x = self.relu1(x)
-        x = self.dropout1(x)
-
-        # Second convolution block
-        x = self.conv2(x)
-        x = self.relu2(x)
-        x = self.dropout2(x)
+        # Apply convolution blocks  
+        out = self.conv1(x)
+        out = self.relu1(out)
+        out = self.dropout1(out)
+        
+        out = self.conv2(out)
+        out = self.relu2(out)
+        out = self.dropout2(out)
 
         # Match dimensions if needed
         if self.downsample is not None:
             residual = self.downsample(residual)
-
-        return self.relu_out(x + residual)  # Skip connection + ReLU
+            
+        # Adjust residual length if needed
+        if residual.size(2) > out.size(2):
+            residual = residual[:, :, -out.size(2):]
+            
+        return self.relu_out(out + residual)
 
 class TCN(nn.Module):
     def __init__(self, input_size, output_size, num_channels, kernel_size, dropout):
