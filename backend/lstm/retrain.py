@@ -8,4 +8,10 @@ import pandas as pd
 def main():
     model = tf.keras.models.load_model("lstm_model.h5")
 
-    # Retrieve current data from API
+    #TODO: Retrieve current data from API
+
+    #TODO: Preprocess data
+
+    #TODO: Train model
+
+    #TODO: delete old mode, save new one with same name so other files can still access

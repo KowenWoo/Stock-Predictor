@@ -13,12 +13,15 @@ def preprocess_data(prices, window_size=50):
     print(prices)  # Reshape for model input
     return prices
 
+def evaluate():
+    #TODO: create evaluation metrics for future forecasting
+    return
 
 def predict():
     window_size = 50
     model = tf.keras.models.load_model("lstm_model.h5") 
     
-    #retrieve last 50 data points (seed data)
+    #TODO: retrieve last 50 data points (seed data)
     #data = get_data_from_api()  # Replace with actual data retrieval
 
     for i in range(window_size):
