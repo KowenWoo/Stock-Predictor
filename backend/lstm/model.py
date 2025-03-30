@@ -6,6 +6,7 @@ https://colab.research.google.com/drive/14b6nR3UrAH46HE0I7HhbE4o1ST0yAKH6#scroll
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from test_model import getPrice
 
 # Preprocessing Function
 def preprocess_data(prices, window_size=50):
