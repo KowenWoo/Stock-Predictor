@@ -16,10 +16,14 @@ Prediction process:
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+<<<<<<< HEAD
 from scipy import stats
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from sklearn.preprocessing import StandardScaler
+=======
+from test_model import getPrice
+>>>>>>> 1492595ed367885b9f53d53f4cbac484b456d9f5
 
 # Preprocessing Function
 def preprocess_data(prices, window_size=50):
