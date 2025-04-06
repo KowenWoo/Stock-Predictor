@@ -11,7 +11,9 @@ Current Technology Stack:
 ## Current Development
 Implementing a core visualization interface for three major tech stocks (AAPL, NVDA, AMZN) with focus on responsive design and smooth data interactions. The application enables users to switch between stocks and view both historical performance and predicted future trends.
 
-AI backend: TCN with residual blocks (convolutional layer, ReLu, Dropout, Normalization). Data is structured into time series dataloader with sequence length 20, input length 1.
+AI backend: LSTM model with winow size 50, achieved 
+- RMSE = 5.330939712652679
+- MAPE = 21.487618635364495
 
 
 ## Future Plans
