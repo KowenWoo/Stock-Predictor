@@ -16,22 +16,22 @@ Prediction process:
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-<<<<<<< HEAD
 from scipy import stats
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from sklearn.preprocessing import StandardScaler
-=======
+from alpha_vantage.timeseries import TimeSeries
 from test_model import getPrice
->>>>>>> 1492595ed367885b9f53d53f4cbac484b456d9f5
+from joblib import dump, load
 
 # Preprocessing Function
 def preprocess_data(prices, window_size=50):
-    prices = np.array(prices).reshape(1, window_size, 1)
+    prices = np.array(prices).reshape(-1, 1)  # Reshape to (n_samples, 1)
     # print(prices)  # Reshape for model input
     return prices
 
-def append_new_point(existing_array, new_point, window_size=50):
+
+def append_new_point(existing_array, new_point):
     """
     Append a new data point to an existing array with shape (1, window_size, 1)
     while maintaining the sliding window structure.
@@ -44,53 +44,55 @@ def append_new_point(existing_array, new_point, window_size=50):
     Returns:
     np.array: Updated array with shape (1, window_size, 1)
     """
-    # Reshape new_point to have shape (1, 1, 1)
-    new_point = np.array([[[new_point]]])
+    updated_array = existing_array[1:]
     
-    # Extract the current window and reshape to (1, window_size-1, 1)
-    # by removing the oldest point
-    current_window = existing_array[0, 1:, :].reshape(1, window_size-1, 1)
+    # Add the new point as a new row at the end
+    new_point_array = np.array(new_point)
+    # print(new_point_array)
     
-    # Concatenate the current window with new_point along axis=1
-    updated_array = np.concatenate((current_window, new_point), axis=1)
+    # Concatenate the arrays
+    updated_array = np.concatenate((updated_array, new_point_array), axis=0)
     
     return updated_array
 
-def evaluate(predictions, window_size=50):
-    '''
-    find confidence interval for each prediction (30 sample size)
-    Visualize them as bands around your mean prediction line
-    '''
-    #90% confidence intervals for each prediction
-    df = len(predictions) - 1
-    alpha = 0.1
-    conf_int = []
-    for i in range(window_size):
-        mean = np.mean(predictions[i])
-        se = np.std(predictions[i]) / np.sqrt(len(predictions[i]))
-        t_crit = stats.t.ppf(1-alpha/2, df)
-        conf_int.append((mean - t_crit * se, mean + t_crit * se))
-    return conf_int
 
-def visualize_ci(predictions, conf_int, dates):
-    '''
-    visualize confidence intervals as bands around mean prediction line
-    '''
-    predictions = np.array(predictions).reshape(-1)
-    lower_bounds = np.array([ci[0] for ci in conf_int])
-    upper_bounds = np.array([ci[1] for ci in conf_int])
-    title = "Confidence Intervals for Predictions"
+# def evaluate(predictions, window_size=50):
+#     '''
+#     find confidence interval for each prediction (30 sample size)
+#     Visualize them as bands around your mean prediction line
+#     '''
+#     #90% confidence intervals for each prediction
+#     df = len(predictions) - 1
+#     alpha = 0.1
+#     conf_int = []
+#     for i in range(window_size):
+#         mean = np.mean(predictions[i])
+#         se = np.std(predictions[i]) / np.sqrt(len(predictions[i]))
+#         t_crit = stats.t.ppf(1-alpha/2, df)
+#         conf_int.append((mean - t_crit * se, mean + t_crit * se))
+#     return conf_int
+
+
+# def visualize_ci(predictions, conf_int, dates):
+#     '''
+#     visualize confidence intervals as bands around mean prediction line
+#     '''
+#     predictions = np.array(predictions).reshape(-1)
+#     lower_bounds = np.array([ci[0] for ci in conf_int])
+#     upper_bounds = np.array([ci[1] for ci in conf_int])
+#     title = "Confidence Intervals for Predictions"
     
-    plt.figure(figsize=(10, 5))
-    plt.plot(dates, predictions, label='Predictions', color='blue', linewidth=2)
-    plt.fill_between(dates, lower_bounds, upper_bounds, color='blue', alpha=0.2, label='Confidence Interval')
+#     plt.figure(figsize=(10, 5))
+#     plt.plot(dates, predictions, label='Predictions', color='blue', linewidth=2)
+#     plt.fill_between(dates, lower_bounds, upper_bounds, color='blue', alpha=0.2, label='Confidence Interval')
     
-    plt.xlabel('X')
-    plt.ylabel('Prediction')
-    plt.title(title)
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.show()
+#     plt.xlabel('X')
+#     plt.ylabel('Prediction')
+#     plt.title(title)
+#     plt.legend()
+#     plt.grid(True, linestyle='--', alpha=0.6)
+#     plt.show()
+
 
 def generate_date_range(start_date, num_days):
     """
@@ -103,6 +105,7 @@ def generate_date_range(start_date, num_days):
     start = datetime.strptime(start_date, "%Y-%m-%d")
     return [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(num_days)]
     
+
 def predict(data, scaler):
     '''
     predict each ith data point 30 times, take average, append to data to predict i+1th point
@@ -114,70 +117,70 @@ def predict(data, scaler):
         50 predicted daat points taken rom averaging each value over 30 simulations
     '''
     window_size = 50
-    sim_size = 30
+    # sim_size = 30
     model = tf.keras.models.load_model("lstm_model.h5") 
 
-    predictions = []
     for i in range(window_size):
-        point = []
-        for i in range(sim_size):
-            point.append(model.predict(data)[0][0])
-        
+        point = model.predict(data)[0][0]
         point = scaler.inverse_transform(np.array(point).reshape(-1, 1)) #inverse transform to get original scale
-        predictions.append(point) #save simulated data for CI calculations
-        data = append_new_point(data, np.mean(point))
+        # predictions.append(point) #save simulated data for CI calculations
+        data = append_new_point(data, point)
 
-    return predictions, data
+    return data
 
     
-def main(data, start_date, scaler):
+def main():
     '''
     Main function to run the prediction and visualization
     start/end date: 'YYYY-MM-DD'
     '''
     #data_sim is 2d list, each sublist is 30 simulations of same point - for use in CI calculations
     #data_avg is 1d list of average values for each point
-    data_sim, data_avg = predict(data, scaler)
+    data = getPrice()
+    start_date = data.pop(0) 
+    scaler = load('scaler.joblib')  
+    data = scaler.transform(preprocess_data(data))
+    data = predict(data, scaler)
+    # print(data)
 
     # Calculate confidence intervals
-    conf_int = evaluate(data_sim)
+    # conf_int = evaluate(data_sim)
 
     # Visualize confidence intervals
     dates = generate_date_range(start_date, 50)
-    visualize_ci(data_avg, conf_int, dates)
+    # visualize_ci(data_avg, conf_int, dates)
+
+    predictions = []
+    for i in range(50):
+        predictions.append((dates[i], data[i][0]))
+
+    print(predictions[:10])
+    return predictions
+        
+
+def save_scaler():
+    '''
+    Save the scaler to a file for later use
+    Run if scaler.joblib file not already in directory
+    '''
+    STOCK = "AAPL"
+    KEY = "BPBSUICJ7AGJ53KW"
+    ts = TimeSeries(key=KEY, output_format='pandas')
+    data, meta_data = ts.get_daily(symbol=STOCK, outputsize='full')
+
+    # Ensure column names are correctly formatted
+    data = data.rename(columns=lambda col: "Close" if "close" in col.lower() else col)
+
+    # Save data to CSV
+    data.to_csv("stock_market_data-AAPL.csv")
+    scaler = StandardScaler()
+    scaler.fit_transform(data[['Close']])
+
+    dump(scaler, 'scaler.joblib')  # Save the scaler to a file
 
 
-
-from alpha_vantage.timeseries import TimeSeries
-import pandas as pd
-
-STOCK = "AAPL"
-KEY = "BPBSUICJ7AGJ53KW"
-ts = TimeSeries(key=KEY, output_format='pandas')
-data, meta_data = ts.get_daily(symbol=STOCK, outputsize='full')
-
-# Ensure column names are correctly formatted
-data = data.rename(columns=lambda col: "Close" if "close" in col.lower() else col)
-
-# Save data to CSV
-data.to_csv("stock_market_data-AAPL.csv")
-scaler = StandardScaler()
-scaled_data = scaler.fit_transform(data[['Close']])
-
-# Retrieve latest 50 data points
-prices = scaled_data[-50:]  
-
-# Preprocess data (assuming it returns a NumPy array)
-processed_data = preprocess_data(prices)  # Modify if preprocess_data requires a DataFrame
-
-# Convert index to datetime if it's not already
-data.index = pd.to_datetime(data.index)
-
-# Set start and end dates for visualization
-start_date = data.index[0].strftime('%Y-%m-%d')  # First date in the last 50 days
-end_date = (data.index[-1] + pd.DateOffset(days=50)).strftime('%Y-%m-%d')  # 50 days after last date
-
-# Run the main function
-main(processed_data, start_date, scaler)
+# save_scaler()
+if __name__ == "__main__":
+    main()
 
 
