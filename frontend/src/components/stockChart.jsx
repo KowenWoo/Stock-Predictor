@@ -71,6 +71,18 @@ const StockChart = ({ data, symbol, onDataProcessed }) => {
       
       formattedData.sort((a, b) => new Date(a.date) - new Date(b.date));
       
+      // Find the last point with historical data to connect the prediction line
+      const lastHistoricalIndex = formattedData.findLastIndex(d => d.historical !== null);
+
+      if (lastHistoricalIndex !== -1) {
+        const lastHistoricalPoint = formattedData[lastHistoricalIndex];
+        // Set the prediction value to be the same as historical to connect the lines
+        formattedData[lastHistoricalIndex] = {
+            ...lastHistoricalPoint,
+            prediction: lastHistoricalPoint.historical,
+        };
+      }
+      
       setProcessedData(formattedData);
       
       // Calculate metrics for callback
