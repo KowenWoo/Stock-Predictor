@@ -20,6 +20,9 @@ AI backend: LSTM model with winow size 50, achieved
 
 ### Requirements
 cd backend
+mkdir -p .venv
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 
 cd frontend
@@ -27,14 +30,18 @@ npm install
 
 ### Run the backend:
 cd backend
-mkdir -p .venv
-python3 -m venv .venv
-source .venv/bin/activate
 uvicorn app.main:app --reload
 
 ### Run the frontend:
 cd frontend
-npm install
 npm run dev
+
+## Remaining Improvements
+- Cache the model results
+- Add more stocks
+- Add more features
+- Add more visualizations
+- Add more data
+
 
 
