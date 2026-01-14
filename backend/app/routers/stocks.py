@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
-from app.services import fetch_and_update_stock_data, get_stock_data_info
+from app.services import fetch_and_update_stock_data, get_stock_data_info, get_historical_prices
 
 router = APIRouter()
 
@@ -8,7 +8,7 @@ router = APIRouter()
 @router.get("/stocks/available")
 async def get_available_stocks():
     """Get list of available stocks for prediction."""
-    return {"stocks": ["AAPL"]}
+    return {"stocks": ["AAPL", "AMZN", "NVDA"]}
 
 
 @router.get("/stocks/data/{symbol}")
@@ -19,6 +19,22 @@ async def get_stock_data(symbol: str):
         return info
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/stocks/history/{symbol}")
+async def get_stock_history(symbol: str, days: int = Query(default=365, ge=1, le=5000)):
+    """
+    Get historical closing prices for a symbol.
+
+    Returns the last N days of historical data from the CSV.
+    """
+    try:
+        history = get_historical_prices(symbol, days)
+        return history
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch historical data: {str(e)}")
 
 
 @router.post("/stocks/update/{symbol}")

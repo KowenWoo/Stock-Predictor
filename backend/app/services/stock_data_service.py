@@ -25,8 +25,8 @@ def fetch_and_update_stock_data(symbol: str = "AAPL") -> dict:
     Returns:
         dict with status info including latest date and number of records
     """
-    if symbol.upper() != "AAPL":
-        raise ValueError(f"Symbol {symbol} not supported. Only AAPL is available.")
+    # Allow any symbol (note: LSTM model was trained on AAPL, predictions may be less accurate for other stocks)
+    symbol = symbol.upper()
 
     api_key = settings.alpha_vantage_api_key
     if not api_key:
@@ -125,4 +125,46 @@ def get_stock_data_info(symbol: str = "AAPL") -> dict:
         "oldest_date": oldest_date,
         "total_records": len(df),
         "csv_path": csv_path
+    }
+
+
+def get_historical_prices(symbol: str = "AAPL", days: int = 365) -> dict:
+    """
+    Get historical closing prices from the CSV file.
+
+    Args:
+        symbol: Stock symbol
+        days: Number of recent days to return
+
+    Returns:
+        dict with symbol and list of {date, price} objects
+    """
+    csv_path = get_csv_path(symbol)
+
+    if not os.path.exists(csv_path):
+        raise ValueError(f"No data file found for {symbol}. Call update endpoint first.")
+
+    df = pd.read_csv(csv_path)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values('date', ascending=False)
+
+    # Get last N days
+    recent_data = df.head(days)
+
+    # Format as list of {date, price}
+    prices = [
+        {
+            "date": row['date'].strftime("%Y-%m-%d"),
+            "price": float(row['Close'])
+        }
+        for _, row in recent_data.iterrows()
+    ]
+
+    # Sort by date ascending (oldest first)
+    prices.reverse()
+
+    return {
+        "symbol": symbol.upper(),
+        "prices": prices,
+        "total_records": len(prices)
     }

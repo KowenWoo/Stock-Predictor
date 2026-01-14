@@ -36,11 +36,13 @@ def get_recent_prices(symbol: str, window_size: int = 50) -> Tuple[str, List[flo
     Get the most recent closing prices from the CSV file.
     Returns: (most_recent_date, list_of_prices)
     """
-    # For MVP, we only support AAPL
-    if symbol.upper() != "AAPL":
-        raise ValueError(f"Symbol {symbol} not supported. Only AAPL is available.")
+    symbol = symbol.upper()
+    csv_path = os.path.join(LSTM_DIR, f"stock_market_data-{symbol}.csv")
 
-    df = pd.read_csv(CSV_PATH)
+    if not os.path.exists(csv_path):
+        raise ValueError(f"No data found for {symbol}. Please update stock data first.")
+
+    df = pd.read_csv(csv_path)
 
     # Sort by date descending to get most recent first
     df['date'] = pd.to_datetime(df['date'])
