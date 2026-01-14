@@ -5,7 +5,7 @@ Developing a responsive web application that visualizes stock price predictions 
 Current Technology Stack:
 - Frontend: React with TailwindCSS for responsive, clean UI design
 - Data Visualization: Recharts integration for interactive stock price charts
-- Backend: Temporal Convolutional Network model for price predictions
+- Backend: Temporal Convolutional Network model for price predictions, FastAPI for API
 - Deployment: Frontend to be hosted on GitHub Pages with separate backend deployment
 
 ## Current Development
@@ -16,11 +16,25 @@ AI backend: LSTM model with winow size 50, achieved
 - MAPE = 21.487618635364495
 
 
-## Future Plans
-- ADD ARIA ROLES for accessibility
-- Migrate to Next.js framework for improved performance and routing
-- Integrate Shadcn UI component library for enhanced UI/UX
-- Use recharts instead of chart.js
-- Unify deployment using Vercel for seamless frontend/backend integration
-- Expand stock coverage and prediction timeframes
-- Enhance prediction accuracy through improved machine learning models
+## Installation and Setup
+
+### Requirements
+cd backend
+pip install -r requirements.txt
+
+cd frontend
+npm install
+
+### Run the backend:
+cd backend
+mkdir -p .venv
+python3 -m venv .venv
+source .venv/bin/activate
+uvicorn app.main:app --reload
+
+### Run the frontend:
+cd frontend
+npm install
+npm run dev
+
+
