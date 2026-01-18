@@ -19,22 +19,22 @@ AI backend: LSTM model with winow size 50, achieved
 ## Installation and Setup
 
 ### Requirements
-cd backend
+`cd backend
 mkdir -p .venv
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt`
 
 cd frontend
-npm install
+`npm install`
 
 ### Run the backend:
-cd backend
-uvicorn app.main:app --reload
+`cd backend
+uvicorn app.main:app --reload`
 
 ### Run the frontend:
-cd frontend
-npm run dev
+`cd frontend
+npm run dev`
 
 ## Remaining Improvements
 - Cache the model results
